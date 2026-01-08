@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Indaba Challenge</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+</head>
+
+<body>
+
+    <div id="app">
+
+        <!-- Header / HUD -->
+        <header id="hud" class="hidden">
+            <div class="score-box">
+                <span class="score-label">PONTOS</span>
+                <span id="score-display">200</span>
+            </div>
+            <div style="display:flex; align-items:center; gap:10px;">
+                <span id="gps-status" style="font-size:1.2rem;" title="GPS status">📍</span>
+                <div class="team-name" id="hud-team-name">Equipa</div>
+            </div>
+        </header>
+
+        <!-- Views Container -->
+        <main id="view-container">
+            <!-- Views will be injected here by JS -->
+        </main>
+
+        <!-- Floating Action Button for Mini Challenges -->
+        <button id="mini-challenge-fab" class="hidden">
+            QUERES MAIS PONTOS?
+        </button>
+
+        <!-- Mini Challenge Modal/Overlay -->
+        <div id="mini-challenge-overlay" class="overlay hidden">
+            <div class="overlay-content">
+                <h2>Mini Desafios</h2>
+                <div id="mini-challenge-intro">
+                    <p>Cada desafio completo dá <strong>50 pontos</strong>.</p>
+                    <p>Cada desafio será aceite após prova fotográfica/vídeo.</p>
+                    <p>Se saltarem um desafio, perdem <strong>20 pontos</strong>.</p>
+                    <button id="btn-start-mini" class="btn-primary">QUERO 1 DESAFIO</button>
+                    <button id="btn-close-mini" class="btn-secondary">Fechar</button>
+                </div>
+                <div id="mini-challenge-active" class="hidden">
+                    <div id="mini-challenge-text" class="challenge-text"></div>
+                    <div class="mini-controls">
+                        <label class="checkbox-container">
+                            <input type="checkbox" id="mini-proof-check">
+                            <span>Já enviámos a foto/vídeo!</span>
+                        </label>
+                        <button id="btn-complete-mini" class="btn-success" disabled>Concluir (+50)</button>
+                        <button id="btn-skip-mini" class="btn-danger">Saltar (-20)</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script src="script.js"></script>
+</body>
+
+</html>

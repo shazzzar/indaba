@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Setup Admin - Indaba Challenge</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .setup-container {
+            max-width: 500px;
+            width: 100%;
+            background: var(--card-bg);
+            padding: 40px;
+            border-radius: var(--border-radius);
+        }
+        
+        h1 {
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            text-align: center;
+            opacity: 0.7;
+            margin-bottom: 30px;
+            font-size: 0.9rem;
+        }
+        
+        input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid var(--primary-color);
+            border-radius: var(--border-radius);
+            background: var(--bg-color);
+            color: var(--text-color);
+            font-size: 1rem;
+            margin-bottom: 15px;
+        }
+        
+        input:focus {
+            outline: none;
+            border-color: var(--secondary-color);
+        }
+        
+        .info-box {
+            background: rgba(3, 218, 198, 0.1);
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            font-size: 0.9rem;
+        }
+        
+        .success-box {
+            background: rgba(76, 175, 80, 0.2);
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+            text-align: center;
+        }
+        
+        .error-box {
+            background: rgba(207, 102, 121, 0.2);
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 10px;
+            color: var(--danger-color);
+        }
+    </style>
+</head>
+<body>
+    <div class="setup-container">
+        <h1>🔧 Setup Admin</h1>
+        <p class="subtitle">Configure o utilizador administrador para o painel de controlo</p>
+        
+        <div id="setup-form">
+            <input type="email" id="email" placeholder="Email do Admin (ex: admin@indaba.pt)" required>
+            <input type="password" id="password" placeholder="Password (mínimo 6 caracteres)" required>
+            <input type="password" id="confirm-password" placeholder="Confirmar Password" required>
+            
+            <div class="info-box">
+                ℹ️ <strong>Nota:</strong> Esta página só precisa ser usada uma vez para criar o utilizador admin. 
+                Depois, usa <code>admin.html</code> para fazer login.
+            </div>
+            
+            <button class="btn-primary" onclick="createAdmin()">CRIAR ADMIN</button>
+            
+            <div id="message"></div>
+        </div>
+    </div>
+
+    <script>
+        // Firebase Configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyAs6Ohn2Qy4BC7eZkEfUtJ3btFs8wkoim0",
+            authDomain: "indaba-36353.firebaseapp.com",
+            databaseURL: "https://indaba-36353-default-rtdb.europe-west1.firebasedatabase.app",
+            projectId: "indaba-36353",
+            storageBucket: "indaba-36353.firebasestorage.app",
+            messagingSenderId: "901928657998",
+            appId: "1:901928657998:web:2387a8aa82fcc0b20f0f1f",
+            measurementId: "G-WTQ9S1G0JV"
+        };
+
+        // Initialize Firebase
+        let auth;
+        try {
+            firebase.initializeApp(firebaseConfig);
+            auth = firebase.auth();
+        } catch (error) {
+            console.error("Firebase initialization error:", error);
+        }
+
+        function createAdmin() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const confirmPassword = document.getElementById('confirm-password').value;
+            const messageDiv = document.getElementById('message');
+
+            // Validation
+            if (!email || !password || !confirmPassword) {
+                messageDiv.innerHTML = '<div class="error-box">❌ Por favor preenche todos os campos!</div>';
+                return;
+            }
+
+            if (password !== confirmPassword) {
+                messageDiv.innerHTML = '<div class="error-box">❌ As passwords não coincidem!</div>';
+                return;
+            }
+
+            if (password.length < 6) {
+                messageDiv.innerHTML = '<div class="error-box">❌ A password deve ter pelo menos 6 caracteres!</div>';
+                return;
+            }
+
+            // Create user
+            messageDiv.innerHTML = '<p style="text-align:center;">⏳ A criar utilizador admin...</p>';
+
+            auth.createUserWithEmailAndPassword(email, password)
+                .then((userCredential) => {
+                    messageDiv.innerHTML = `
+                        <div class="success-box">
+                            <h2>✅ Admin Criado com Sucesso!</h2>
+                            <p style="margin-top: 15px;">
+                                <strong>Email:</strong> ${email}
+                            </p>
+                            <p style="margin-top: 20px; opacity: 0.8;">
+                                Agora podes fazer login em <a href="admin.html" style="color: var(--secondary-color);">admin.html</a>
+                            </p>
+                            <button class="btn-primary" style="margin-top: 20px;" onclick="window.location.href='admin.html'">
+                                IR PARA ADMIN
+                            </button>
+                        </div>
+                    `;
+
+                    // Clear form
+                    document.getElementById('email').value = '';
+                    document.getElementById('password').value = '';
+                    document.getElementById('confirm-password').value = '';
+                })
+                .catch((error) => {
+                    console.error("Error creating admin:", error);
+                    
+                    let errorMessage = error.message;
+                    if (error.code === 'auth/email-already-in-use') {
+                        errorMessage = 'Este email já está registado. Usa admin.html para fazer login.';
+                    } else if (error.code === 'auth/invalid-email') {
+                        errorMessage = 'Email inválido!';
+                    } else if (error.code === 'auth/weak-password') {
+                        errorMessage = 'Password muito fraca!';
+                    }
+
+                    messageDiv.innerHTML = `<div class="error-box">❌ Erro: ${errorMessage}</div>`;
+                });
+        }
+
+        // Allow Enter key to submit
+        document.addEventListener('DOMContentLoaded', () => {
+            document.querySelectorAll('input').forEach(input => {
+                input.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        createAdmin();
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>
