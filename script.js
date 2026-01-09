@@ -143,8 +143,14 @@ function init() {
 
     // Mini Challenge Listeners
     fab.addEventListener('click', () => {
-        miniOverlay.classList.remove('hidden');
-        renderMiniOverlay();
+        // Se já tem um mini desafio ativo, vai direto para a view
+        if (state.currentMiniChallenge) {
+            changeView('MINI_CHALLENGE_VIEW');
+        } else {
+            // Se não tem, mostra o tutorial
+            miniOverlay.classList.remove('hidden');
+            renderMiniOverlay();
+        }
     });
 
     document.getElementById('btn-close-mini').addEventListener('click', () => {
@@ -152,28 +158,10 @@ function init() {
     });
 
     document.getElementById('btn-start-mini').addEventListener('click', () => {
-        if (state.currentMiniChallenge || state.miniChallengePool.length > 0) {
+        if (state.miniChallengePool.length > 0) {
+            miniOverlay.classList.add('hidden');
             startMiniChallenge();
-        } else {
-            alert("Não há mais mini desafios!");
         }
-    });
-
-    document.getElementById('btn-skip-mini').addEventListener('click', () => {
-        updateScore(-20);
-        state.currentMiniChallenge = null;
-        saveState();
-        renderMiniOverlay();
-    });
-
-    document.getElementById('btn-complete-mini').addEventListener('click', () => {
-        updateScore(50);
-        state.currentMiniChallenge = null;
-        document.getElementById('mini-proof-check').checked = false; // Reset checkbox
-        saveState();
-        renderMiniOverlay();
-        miniOverlay.classList.add('hidden'); // Auto close on success
-        alert("Bom trabalho! +50 pontos.");
     });
 
     document.getElementById('mini-proof-check').addEventListener('change', (e) => {
@@ -409,7 +397,8 @@ function render() {
                             `<img src="${state.currentMiniChallengeMedia}" alt="Mini Desafio" style="max-width: 100%; border-radius: 8px;">`
                         }
                     </div>
-                    <button class="btn-success" onclick="completeMiniChallenge()">CONCLUIR E VOLTAR</button>
+                    <button class="btn-success" onclick="completeMiniChallenge()">✅ ENVIAR E CONCLUIR</button>
+                    <button class="btn-secondary" style="margin-top: 10px;" onclick="changeView('MAIN_LOOP')">◀️ VOLTAR PARA O DESAFIO PRINCIPAL</button>
                 ` : `
                     <div style="margin: 20px 0;">
                         <p style="margin-bottom: 15px; opacity: 0.8;">Envia uma foto ou vídeo a comprovar que completaste o desafio:</p>
@@ -423,7 +412,8 @@ function render() {
                             </div>
                         </div>
                     </div>
-                    <button class="btn-danger" style="margin-top: 10px;" onclick="changeView('MAIN_LOOP')">CANCELAR</button>
+                    <button class="btn-secondary" style="margin-top: 10px;" onclick="changeView('MAIN_LOOP')">◀️ VOLTAR PARA O DESAFIO PRINCIPAL</button>
+                    <p style="text-align: center; margin-top: 15px; opacity: 0.6; font-size: 0.85rem;">O teu progresso ficará guardado</p>
                 `}
             </div>
         `;
@@ -442,28 +432,30 @@ function render() {
             </div>
         `;
     }
+    
+    // Update FAB appearance based on mini challenge status
+    if (state.currentMiniChallenge) {
+        fab.style.background = 'var(--danger-color)';
+        fab.style.animation = 'pulse 2s infinite';
+        fab.title = 'Tens um mini desafio ativo! Clica para continuar';
+    } else {
+        fab.style.background = '';
+        fab.style.animation = '';
+        fab.title = 'Queres mais pontos?';
+    }
 }
 
 function renderMiniOverlay() {
     const introDiv = document.getElementById('mini-challenge-intro');
-    const activeDiv = document.getElementById('mini-challenge-active');
-    const textDiv = document.getElementById('mini-challenge-text');
     const startBtn = document.getElementById('btn-start-mini');
 
-    if (state.currentMiniChallenge) {
-        introDiv.classList.add('hidden');
-        activeDiv.classList.remove('hidden');
-        textDiv.innerText = state.currentMiniChallenge;
+    if (state.miniChallengePool.length === 0) {
+        startBtn.disabled = true;
+        startBtn.innerText = "SEM MAIS DESAFIOS";
     } else {
-        introDiv.classList.remove('hidden');
-        activeDiv.classList.add('hidden');
-        if (state.miniChallengePool.length === 0) {
-            startBtn.disabled = true;
-            startBtn.innerText = "SEM MAIS DESAFIOS";
-        }
+        startBtn.disabled = false;
+        startBtn.innerText = "ACEITAR DESAFIO";
     }
-
-    // Checkbox reset logic is handled in listeners
 }
 
 
@@ -583,6 +575,7 @@ window.handleMiniMediaUpload = async (event) => {
 };
 
 window.completeMiniChallenge = () => {
+    updateScore(50);
     state.currentMiniChallenge = null;
     state.currentMiniChallengeMedia = null;
     saveState();
