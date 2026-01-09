@@ -772,14 +772,23 @@ function showMiniChallenges() {
     const teams = Object.entries(teamsData);
     const teamsWithMiniChallenges = teams.filter(([_, team]) => team.currentMiniChallenge);
     
-    if (teamsWithMiniChallenges.length === 0) {
-        alert("📝 Nenhum mini desafio pendente no momento!");
-        return;
-    }
-    
     const modal = document.createElement('div');
     modal.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.9); z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 20px;';
     modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+    
+    if (teamsWithMiniChallenges.length === 0) {
+        modal.innerHTML = `
+            <div style="background: var(--card-bg); border-radius: var(--border-radius); max-width: 500px; width: 100%; padding: 40px; text-align: center; position: relative;">
+                <button onclick="this.closest('div').parentElement.remove()" style="position: absolute; top: 15px; right: 15px; background: var(--danger-color); color: white; border: none; border-radius: 50%; width: 35px; height: 35px; font-size: 1.2rem; cursor: pointer; font-weight: bold;">×</button>
+                
+                <div style="font-size: 4rem; margin-bottom: 20px; opacity: 0.3;">📝</div>
+                <h2 style="color: var(--secondary-color); margin-bottom: 15px;">Nenhum Mini Desafio Pendente</h2>
+                <p style="opacity: 0.6;">Todas as equipas completaram os seus mini desafios ou ainda não receberam nenhum.</p>
+            </div>
+        `;
+        document.body.appendChild(modal);
+        return;
+    }
     
     const miniChallengesList = teamsWithMiniChallenges.map(([teamId, team]) => `
         <div style="background: rgba(3, 218, 198, 0.1); border-left: 4px solid var(--secondary-color); padding: 15px; margin-bottom: 12px; border-radius: 8px; cursor: pointer; transition: all 0.3s;" onclick="event.stopPropagation(); showTeamDetails('${teamId}')">
