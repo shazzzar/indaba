@@ -609,3 +609,14 @@ window.completeMiniChallenge = () => {
     changeView('MAIN_LOOP');
 };
 
+// Kickoff - Iniciar quando o DOM estiver pronto
+console.log("📋 A aguardar DOM...");
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+        console.log("✅ DOM pronto!");
+        init();
+    });
+} else {
+    console.log("✅ DOM já estava pronto!");
+    init();
+}
