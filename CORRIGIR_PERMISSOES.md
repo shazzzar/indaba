@@ -5,44 +5,13 @@
 permission_denied at /teams: Client doesn't have permission to access the desired data.
 ```
 
-## ✅ SOLUÇÃO RÁPIDA
+## ✅ SOLUÇÃO DEFINITIVA
 
-### Passo 1: Aceder ao Firebase Console
-1. Vai a https://console.firebase.google.com/
-2. Seleciona o projeto "indaba-36353"
-3. No menu lateral, clica em **"Realtime Database"**
-4. Clica no separador **"Regras"** (Rules)
+### Opção 1: Regras Simples (Recomendado para Teste)
 
-### Passo 2: Substituir as Regras
-Apaga tudo e cola isto:
-
-```json
-{
-  "rules": {
-    "teams": {
-      "$teamId": {
-        ".read": "auth != null",
-        ".write": "auth != null"
-      }
-    }
-  }
-}
-```
-
-### Passo 3: Publicar
-1. Clica no botão **"Publicar"** (Publish)
-2. Aguarda confirmação
-
-### Passo 4: Testar
-1. Volta ao admin.html
-2. Atualiza a página (F5)
-3. As equipas devem aparecer! ✅
-
----
-
-## ⚠️ SE AINDA NÃO FUNCIONAR
-
-Usa regras temporárias mais permissivas (APENAS PARA TESTE):
+Vai ao Firebase Console:
+1. **Realtime Database** → **Regras**
+2. Apaga TUDO e cola:
 
 ```json
 {
@@ -53,15 +22,36 @@ Usa regras temporárias mais permissivas (APENAS PARA TESTE):
 }
 ```
 
-⚠️ **IMPORTANTE**: Estas regras são INSEGURAS! Usa apenas para testar e depois volta às regras seguras acima.
+3. Clica **"Publicar"**
+
+⚠️ **Estas regras permitem acesso total!** Usa apenas para testar. Quando funcionar, muda para as regras seguras abaixo.
 
 ---
 
-## 🔍 Verificar Autenticação
+### Opção 2: Regras Seguras (Usar depois de testar)
 
-Na consola do browser (F12), verifica se vês:
-```
-Current user: {email: "teu-email@..."}
+```json
+{
+  "rules": {
+    "teams": {
+      ".read": "auth != null",
+      ".write": "auth != null",
+      "$teamId": {
+        ".read": "auth != null",
+        ".write": "auth != null"
+      }
+    }
+  }
+}
 ```
 
-Se não vires isto, o problema é que não fizeste login corretamente.
+---
+
+## 🎯 TESTA AGORA
+
+1. Usa as **Regras Simples** (Opção 1)
+2. Publica no Firebase
+3. Atualiza o admin.html (F5)
+4. **Deve funcionar!** ✅
+
+Se funcionar, volta e usa as **Regras Seguras** (Opção 2).
