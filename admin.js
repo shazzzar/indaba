@@ -72,6 +72,8 @@ function loadTeams() {
         return;
     }
     
+    console.log("Loading teams...");
+    
     // Remove old listener if exists
     if (window.teamsListener) {
         db.ref('teams').off('value', window.teamsListener);
@@ -80,6 +82,9 @@ function loadTeams() {
     // Real-time listener
     window.teamsListener = db.ref('teams').on('value', (snapshot) => {
         const newData = snapshot.val() || {};
+        
+        console.log("Teams data received:", newData);
+        console.log("Number of teams:", Object.keys(newData).length);
         
         // Check if data changed
         const hasChanges = JSON.stringify(newData) !== JSON.stringify(teamsData);
@@ -90,6 +95,22 @@ function loadTeams() {
         // Show update indicator
         if (hasChanges && Object.keys(teamsData).length > 0) {
             showUpdateNotification();
+        }
+    }, (error) => {
+        console.error("Error loading teams:", error);
+        console.error("Error code:", error.code);
+        console.error("Error message:", error.message);
+        
+        // Show error to user
+        const container = document.getElementById('teams-container');
+        if (container) {
+            container.innerHTML = `
+                <div style="background: rgba(207, 102, 121, 0.2); padding: 20px; border-radius: 8px; text-align: center;">
+                    <h3 style="color: var(--danger-color); margin-bottom: 10px;">❌ Erro ao carregar equipas</h3>
+                    <p>${error.message}</p>
+                    <p style="margin-top: 10px; opacity: 0.7;">Verifica as regras de segurança do Firebase Database</p>
+                </div>
+            `;
         }
     });
 }
@@ -181,12 +202,30 @@ function renderTeams() {
     const container = document.getElementById('teams-container');
     const statsContainer = document.getElementById('stats-container');
     
-    if (!container) return;
+    console.log("Rendering teams...");
+    console.log("Container exists:", !!container);
+    console.log("Stats container exists:", !!statsContainer);
+    console.log("Teams data:", teamsData);
+    
+    if (!container) {
+        console.error("Container não encontrado!");
+        return;
+    }
     
     const teams = Object.entries(teamsData);
     
+    console.log("Number of teams to render:", teams.length);
+    
     if (teams.length === 0) {
         container.innerHTML = '<p style="text-align:center; opacity:0.5; padding:40px;">Nenhuma equipa registada ainda.</p>';
+        if (statsContainer) {
+            statsContainer.innerHTML = `
+                <div class="stat-box">
+                    <div class="stat-value">0</div>
+                    <div class="stat-label">Equipas Totais</div>
+                </div>
+            `;
+        }
         return;
     }
     
