@@ -434,11 +434,154 @@ function showTeamDetails(teamId) {
             
             <h3 style="margin-top: 25px; margin-bottom: 15px; color: var(--secondary-color);">📍 Histórico GPS (últimos 10)</h3>
             ${gpsHtml}
+            
+            ${pathPoints.length > 0 ? `
+                <button onclick="event.stopPropagation(); showMapView('${teamId}')" style="width: 100%; margin-top: 20px; padding: 15px; background: var(--success-color); color: white; border: none; border-radius: 8px; font-weight: 600; font-size: 1rem; cursor: pointer;">
+                    🗺️ VER PERCURSO NO MAPA
+                </button>
+            ` : ''}
         </div>
     `;
     
     document.body.appendChild(modal);
 }
+
+function showMapView(teamId) {
+    const team = teamsData[teamId];
+    if (!team || !team.pathHistory || team.pathHistory.length === 0) {
+        alert("Não há dados GPS para mostrar no mapa.");
+        return;
+    }
+    
+    const pathPoints = team.pathHistory;
+    
+    // Create map modal
+    const mapModal = document.createElement('div');
+    mapModal.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.95); z-index: 10000; display: flex; flex-direction: column; padding: 20px;';
+    
+    mapModal.innerHTML = `
+        <div style="background: var(--card-bg); border-radius: var(--border-radius); flex: 1; display: flex; flex-direction: column; overflow: hidden; position: relative;">
+            <div style="padding: 20px; border-bottom: 1px solid rgba(255,255,255,0.1); display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <h2 style="margin: 0; color: var(--primary-color);">🗺️ Percurso GPS - ${team.teamName}</h2>
+                    <p style="margin: 5px 0 0 0; opacity: 0.6; font-size: 0.9rem;">${pathPoints.length} pontos registados</p>
+                </div>
+                <button onclick="this.closest('div').parentElement.parentElement.remove()" style="background: var(--danger-color); color: white; border: none; border-radius: 50%; width: 40px; height: 40px; font-size: 1.5rem; cursor: pointer; font-weight: bold;">×</button>
+            </div>
+            
+            <div id="map-${teamId}" style="flex: 1; width: 100%;"></div>
+            
+            <div style="padding: 15px; background: rgba(0,0,0,0.3); display: flex; gap: 20px; flex-wrap: wrap; justify-content: center;">
+                <div style="text-align: center;">
+                    <div style="font-size: 0.8rem; opacity: 0.7;">Início</div>
+                    <div style="font-weight: 600; color: var(--success-color);">🟢 ${new Date(pathPoints[0].timestamp).toLocaleString('pt-PT')}</div>
+                </div>
+                <div style="text-align: center;">
+                    <div style="font-size: 0.8rem; opacity: 0.7;">Último Ponto</div>
+                    <div style="font-weight: 600; color: var(--danger-color);">🔴 ${new Date(pathPoints[pathPoints.length - 1].timestamp).toLocaleString('pt-PT')}</div>
+                </div>
+                <div style="text-align: center;">
+                    <div style="font-size: 0.8rem; opacity: 0.7;">Total Pontos</div>
+                    <div style="font-weight: 600; color: var(--secondary-color);">${pathPoints.length}</div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(mapModal);
+    
+    // Initialize map after modal is in DOM
+    setTimeout(() => {
+        const mapElement = document.getElementById(`map-${teamId}`);
+        
+        // Default center (Braga, Portugal)
+        const defaultCenter = [41.5454, -8.4265];
+        const firstPoint = pathPoints[0];
+        const centerLat = firstPoint.lat || defaultCenter[0];
+        const centerLng = firstPoint.lng || defaultCenter[1];
+        
+        // Create map
+        const map = L.map(`map-${teamId}`).setView([centerLat, centerLng], 14);
+        
+        // Add tile layer
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors',
+            maxZoom: 19
+        }).addTo(map);
+        
+        // Prepare coordinates for polyline
+        const coordinates = pathPoints
+            .filter(p => p.lat && p.lng)
+            .map(p => [p.lat, p.lng]);
+        
+        if (coordinates.length === 0) {
+            alert("Não há coordenadas GPS válidas para mostrar.");
+            mapModal.remove();
+            return;
+        }
+        
+        // Draw path
+        const polyline = L.polyline(coordinates, {
+            color: '#03dac6',
+            weight: 4,
+            opacity: 0.8
+        }).addTo(map);
+        
+        // Add markers for start and end
+        if (coordinates.length > 0) {
+            // Start marker (green)
+            L.marker(coordinates[0], {
+                icon: L.divIcon({
+                    className: 'custom-marker',
+                    html: '<div style="background: #4caf50; width: 30px; height: 30px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; font-size: 18px;">🏁</div>',
+                    iconSize: [30, 30]
+                })
+            }).addTo(map).bindPopup(`
+                <strong>Início</strong><br>
+                ${new Date(pathPoints[0].timestamp).toLocaleString('pt-PT')}
+            `);
+            
+            // End marker (red)
+            if (coordinates.length > 1) {
+                L.marker(coordinates[coordinates.length - 1], {
+                    icon: L.divIcon({
+                        className: 'custom-marker',
+                        html: '<div style="background: #cf6679; width: 30px; height: 30px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; font-size: 18px;">📍</div>',
+                        iconSize: [30, 30]
+                    })
+                }).addTo(map).bindPopup(`
+                    <strong>Último Ponto</strong><br>
+                    ${new Date(pathPoints[pathPoints.length - 1].timestamp).toLocaleString('pt-PT')}
+                `);
+            }
+            
+            // Add markers every 10 points
+            coordinates.forEach((coord, index) => {
+                if (index > 0 && index < coordinates.length - 1 && index % 10 === 0) {
+                    L.circleMarker(coord, {
+                        radius: 5,
+                        fillColor: '#bb86fc',
+                        color: '#fff',
+                        weight: 2,
+                        opacity: 1,
+                        fillOpacity: 0.8
+                    }).addTo(map).bindPopup(`
+                        <strong>Ponto ${index + 1}</strong><br>
+                        ${new Date(pathPoints[index].timestamp).toLocaleString('pt-PT')}
+                    `);
+                }
+            });
+        }
+        
+        // Fit map to show all points
+        map.fitBounds(polyline.getBounds(), { padding: [50, 50] });
+        
+        // Fix map rendering issue
+        setTimeout(() => map.invalidateSize(), 100);
+    }, 100);
+}
+
+window.showMapView = showMapView;
 
 window.showTeamDetails = showTeamDetails;
 
