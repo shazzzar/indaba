@@ -184,6 +184,10 @@ function render() {
                     </p>
                 </div>
                 <div style="display: flex; gap: 10px; align-items: center;">
+                    <button id="mini-challenges-btn" onclick="showMiniChallenges()" style="padding: 10px 20px; background: rgba(3, 218, 198, 0.2); color: var(--secondary-color); border: 2px solid var(--secondary-color); border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 0.9rem; position: relative;">
+                        📝 Mini Desafios
+                        <span id="mini-badge" style="display: none; position: absolute; top: -8px; right: -8px; background: var(--danger-color); color: white; border-radius: 50%; width: 24px; height: 24px; font-size: 0.75rem; font-weight: 800; display: flex; align-items: center; justify-content: center;"></span>
+                    </button>
                     <button id="edit-mode-btn" onclick="toggleEditMode()" style="padding: 10px 20px; background: ${editMode ? 'var(--danger-color)' : 'rgba(255, 193, 7, 0.3)'}; color: ${editMode ? 'white' : '#ffc107'}; border: 2px solid ${editMode ? 'var(--danger-color)' : '#ffc107'}; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 0.9rem; transition: all 0.3s;">
                         ${editMode ? '🔓 MODO EDIÇÃO ATIVO' : '🔒 Ativar Modo Edição'}
                     </button>
@@ -286,6 +290,10 @@ function renderTeams() {
     const avgScore = Math.round(teams.reduce((sum, [_, t]) => sum + (t.score || 0), 0) / totalTeams);
     const topScore = Math.max(...teams.map(([_, t]) => t.score || 0));
     const finishedTeams = teams.filter(([_, t]) => t.view === 'FINISH').length;
+    
+    // Count mini challenges pending
+    const miniChallengesPending = teams.filter(([_, t]) => t.currentMiniChallenge).length;
+    updateMiniChallengeBadge(miniChallengesPending);
     
     // Render stats
     statsContainer.innerHTML = `
@@ -746,7 +754,81 @@ function toggleEditMode() {
     render();
 }
 
+// Update mini challenge badge
+function updateMiniChallengeBadge(count) {
+    const badge = document.getElementById('mini-badge');
+    if (badge) {
+        if (count > 0) {
+            badge.textContent = count;
+            badge.style.display = 'flex';
+        } else {
+            badge.style.display = 'none';
+        }
+    }
+}
+
+// Show mini challenges modal
+function showMiniChallenges() {
+    const teams = Object.entries(teamsData);
+    const teamsWithMiniChallenges = teams.filter(([_, team]) => team.currentMiniChallenge);
+    
+    if (teamsWithMiniChallenges.length === 0) {
+        alert("📝 Nenhum mini desafio pendente no momento!");
+        return;
+    }
+    
+    const modal = document.createElement('div');
+    modal.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.9); z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 20px;';
+    modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+    
+    const miniChallengesList = teamsWithMiniChallenges.map(([teamId, team]) => `
+        <div style="background: rgba(3, 218, 198, 0.1); border-left: 4px solid var(--secondary-color); padding: 15px; margin-bottom: 12px; border-radius: 8px; cursor: pointer; transition: all 0.3s;" onclick="event.stopPropagation(); showTeamDetails('${teamId}')">
+            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 8px;">
+                <div>
+                    <div style="font-weight: 800; color: var(--primary-color); font-size: 1.1rem; margin-bottom: 5px;">
+                        ${team.teamName || 'Equipa Sem Nome'}
+                    </div>
+                    <div style="font-size: 0.85rem; opacity: 0.6;">
+                        ID: ${teamId}
+                    </div>
+                </div>
+                <div style="background: rgba(187, 134, 252, 0.2); padding: 5px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; color: var(--primary-color);">
+                    ${team.score || 0} pts
+                </div>
+            </div>
+            <div style="background: rgba(255,255,255,0.05); padding: 12px; border-radius: 6px; margin-top: 10px;">
+                <div style="font-weight: 600; margin-bottom: 5px; color: var(--secondary-color);">📝 Mini Desafio:</div>
+                <div style="white-space: pre-wrap; line-height: 1.5;">${team.currentMiniChallenge}</div>
+            </div>
+            <div style="text-align: right; margin-top: 10px; opacity: 0.6; font-size: 0.8rem;">
+                🕐 ${team.lastUpdate ? new Date(team.lastUpdate).toLocaleString('pt-PT') : 'N/A'}
+            </div>
+        </div>
+    `).join('');
+    
+    modal.innerHTML = `
+        <div style="background: var(--card-bg); border-radius: var(--border-radius); max-width: 900px; width: 100%; max-height: 90vh; overflow-y: auto; padding: 30px; position: relative;">
+            <button onclick="this.closest('div').parentElement.remove()" style="position: absolute; top: 15px; right: 15px; background: var(--danger-color); color: white; border: none; border-radius: 50%; width: 35px; height: 35px; font-size: 1.2rem; cursor: pointer; font-weight: bold;">×</button>
+            
+            <h2 style="margin-bottom: 10px; color: var(--secondary-color); display: flex; align-items: center; gap: 10px;">
+                📝 Mini Desafios Pendentes
+                <span style="background: var(--danger-color); color: white; padding: 5px 12px; border-radius: 20px; font-size: 0.9rem;">
+                    ${teamsWithMiniChallenges.length}
+                </span>
+            </h2>
+            <p style="opacity: 0.6; margin-bottom: 25px;">Clica numa equipa para ver detalhes completos</p>
+            
+            <div style="max-height: 70vh; overflow-y: auto;">
+                ${miniChallengesList}
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+}
+
 window.toggleEditMode = toggleEditMode;
+window.showMiniChallenges = showMiniChallenges;
 
 window.showTeamDetails = showTeamDetails;
 
