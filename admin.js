@@ -408,7 +408,17 @@ function showTeamDetails(teamId) {
     }
     
     // Create modal
-    const modal ${editMode ? `<button onclick="editTeamName('${teamId}')" style="margin-left: 10px; background: var(--primary-color); color: black; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; font-size: 0.8rem;">✏️ Editar Nome</button>` : ''}
+    const modal = document.createElement('div');
+    modal.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.9); z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 20px;';
+    modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+    
+    modal.innerHTML = `
+        <div style="background: var(--card-bg); border-radius: var(--border-radius); max-width: 800px; width: 100%; max-height: 90vh; overflow-y: auto; padding: 30px; position: relative;">
+            <button onclick="this.closest('div').parentElement.remove()" style="position: absolute; top: 15px; right: 15px; background: var(--danger-color); color: white; border: none; border-radius: 50%; width: 35px; height: 35px; font-size: 1.2rem; cursor: pointer; font-weight: bold;">×</button>
+            
+            <h2 style="margin-bottom: 10px; color: var(--primary-color);">
+                <span id="team-name-display-${teamId}">${team.teamName || 'Sem nome'}</span>
+                ${editMode ? `<button onclick="editTeamName('${teamId}')" style="margin-left: 10px; background: var(--primary-color); color: black; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; font-size: 0.8rem;">✏️ Editar Nome</button>` : ''}
             </h2>
             <p style="opacity: 0.6; margin-bottom: 20px;">ID: ${teamId}</p>
             
@@ -417,16 +427,6 @@ function showTeamDetails(teamId) {
                     <div id="team-score-display-${teamId}" style="font-size: 2rem; font-weight: 800; color: var(--secondary-color);">${team.score || 0}</div>
                     <div style="opacity: 0.7; font-size: 0.9rem;">Pontos</div>
                     ${editMode ? `<button onclick="editTeamScore('${teamId}')" style="margin-top: 8px; background: var(--secondary-color); color: black; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; font-size: 0.75rem; width: 100%;">✏️ Editar</button>` : ''}
-                <span id="team-name-display-${teamId}">${team.teamName || 'Sem nome'}</span>
-                <button onclick="editTeamName('${teamId}')" style="margin-left: 10px; background: var(--primary-color); color: black; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; font-size: 0.8rem;">✏️ Editar Nome</button>
-            </h2>
-            <p style="opacity: 0.6; margin-bottom: 20px;">ID: ${teamId}</p>
-            
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin-bottom: 25px;">
-                <div style="background: rgba(3, 218, 198, 0.1); padding: 15px; border-radius: 8px; text-align: center;">
-                    <div id="team-score-display-${teamId}" style="font-size: 2rem; font-weight: 800; color: var(--secondary-color);">${team.score || 0}</div>
-                    <div style="opacity: 0.7; font-size: 0.9rem;">Pontos</div>
-                    <button onclick="editTeamScore('${teamId}')" style="margin-top: 8px; background: var(--secondary-color); color: black; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; font-size: 0.75rem; width: 100%;">✏️ Editar</button>
                 </div>
                 <div style="background: rgba(187, 134, 252, 0.1); padding: 15px; border-radius: 8px; text-align: center;">
                     <div style="font-size: 2rem; font-weight: 800; color: var(--primary-color);">${currentIndex}</div>
@@ -467,7 +467,7 @@ function showTeamDetails(teamId) {
                 </button>
             ` : ''}
             
-            ${pathPoints.length > 5 ? `
+            ${editMode && pathPoints.length > 5 ? `
                 <button onclick="clearTeamGPS('${teamId}')" style="width: 100%; margin-top: 10px; padding: 12px; background: rgba(207, 102, 121, 0.2); color: var(--danger-color); border: 2px solid var(--danger-color); border-radius: 8px; cursor: pointer; font-weight: 600;">
                     🗑️ Limpar Histórico GPS
                 </button>
@@ -743,7 +743,16 @@ function deleteTeam(teamId) {
 
 window.editTeamName = editTeamName;
 window.editTeamScore = editTeamScore;
-window.resetTeamProgress = resetTeamProgress;
+window.resetTeamProgress = rese
+
+// Toggle edit mode
+function toggleEditMode() {
+    editMode = !editMode;
+    console.log("Edit mode:", editMode);
+    render();
+}
+
+window.toggleEditMode = toggleEditMode;tTeamProgress;
 window.clearTeamGPS = clearTeamGPS;
 window.deleteTeam = deleteTeam;
 
