@@ -24,6 +24,7 @@ try {
 let isAuthenticated = false;
 let currentUser = null;
 let teamsData = {};
+let editMode = false;
 
 // DOM
 const app = document.getElementById('admin-app');
@@ -169,7 +170,10 @@ function render() {
                         </span>
                     </p>
                 </div>
-                <div>
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <button id="edit-mode-btn" onclick="toggleEditMode()" style="padding: 10px 20px; background: ${editMode ? 'var(--danger-color)' : 'rgba(255, 193, 7, 0.3)'}; color: ${editMode ? 'white' : '#ffc107'}; border: 2px solid ${editMode ? 'var(--danger-color)' : '#ffc107'}; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 0.9rem; transition: all 0.3s;">
+                        ${editMode ? '🔓 MODO EDIÇÃO ATIVO' : '🔒 Ativar Modo Edição'}
+                    </button>
                     <button class="refresh-btn" onclick="loadTeams()">🔄 Atualizar</button>
                     <button class="logout-btn" onclick="logout()">Sair</button>
                 </div>
@@ -178,6 +182,13 @@ function render() {
             <div id="update-notification" style="display: none; position: fixed; top: 20px; right: 20px; background: var(--success-color); color: white; padding: 15px 25px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); z-index: 10000; animation: slideIn 0.3s ease;">
                 ✨ Dados atualizados!
             </div>
+            
+            ${editMode ? `
+                <div style="background: rgba(207, 102, 121, 0.2); border: 2px solid var(--danger-color); padding: 15px; border-radius: 8px; margin: 20px 0; text-align: center;">
+                    <strong style="color: var(--danger-color);">⚠️ MODO EDIÇÃO ATIVO</strong>
+                    <p style="margin: 5px 0 0 0; opacity: 0.8;">Podes editar e eliminar equipas. Cuidado com as ações!</p>
+                </div>
+            ` : ''}
             
             <div class="stats-overview" id="stats-container">
                 <!-- Stats will be injected -->
@@ -397,15 +408,15 @@ function showTeamDetails(teamId) {
     }
     
     // Create modal
-    const modal = document.createElement('div');
-    modal.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.9); z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 20px;';
-    modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
-    
-    modal.innerHTML = `
-        <div style="background: var(--card-bg); border-radius: var(--border-radius); max-width: 800px; width: 100%; max-height: 90vh; overflow-y: auto; padding: 30px; position: relative;">
-            <button onclick="this.closest('div').parentElement.remove()" style="position: absolute; top: 15px; right: 15px; background: var(--danger-color); color: white; border: none; border-radius: 50%; width: 35px; height: 35px; font-size: 1.2rem; cursor: pointer; font-weight: bold;">×</button>
+    const modal ${editMode ? `<button onclick="editTeamName('${teamId}')" style="margin-left: 10px; background: var(--primary-color); color: black; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; font-size: 0.8rem;">✏️ Editar Nome</button>` : ''}
+            </h2>
+            <p style="opacity: 0.6; margin-bottom: 20px;">ID: ${teamId}</p>
             
-            <h2 style="margin-bottom: 10px; color: var(--primary-color);">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin-bottom: 25px;">
+                <div style="background: rgba(3, 218, 198, 0.1); padding: 15px; border-radius: 8px; text-align: center;">
+                    <div id="team-score-display-${teamId}" style="font-size: 2rem; font-weight: 800; color: var(--secondary-color);">${team.score || 0}</div>
+                    <div style="opacity: 0.7; font-size: 0.9rem;">Pontos</div>
+                    ${editMode ? `<button onclick="editTeamScore('${teamId}')" style="margin-top: 8px; background: var(--secondary-color); color: black; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; font-size: 0.75rem; width: 100%;">✏️ Editar</button>` : ''}
                 <span id="team-name-display-${teamId}">${team.teamName || 'Sem nome'}</span>
                 <button onclick="editTeamName('${teamId}')" style="margin-left: 10px; background: var(--primary-color); color: black; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; font-size: 0.8rem;">✏️ Editar Nome</button>
             </h2>
@@ -433,14 +444,16 @@ function showTeamDetails(teamId) {
                 ${team.currentMiniChallenge ? `<div><strong>Mini Desafio:</strong> ${team.currentMiniChallenge}</div>` : ''}
             </div>
             
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px;">
-                <button onclick="resetTeamProgress('${teamId}')" style="padding: 12px; background: rgba(255, 193, 7, 0.2); color: #ffc107; border: 2px solid #ffc107; border-radius: 8px; cursor: pointer; font-weight: 600;">
-                    🔄 Resetar Progresso
-                </button>
-                <button onclick="deleteTeam('${teamId}')" style="padding: 12px; background: rgba(207, 102, 121, 0.2); color: var(--danger-color); border: 2px solid var(--danger-color); border-radius: 8px; cursor: pointer; font-weight: 600;">
-                    🗑️ Eliminar Equipa
-                </button>
-            </div>
+            ${editMode ? `
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px;">
+                    <button onclick="resetTeamProgress('${teamId}')" style="padding: 12px; background: rgba(255, 193, 7, 0.2); color: #ffc107; border: 2px solid #ffc107; border-radius: 8px; cursor: pointer; font-weight: 600;">
+                        🔄 Resetar Progresso
+                    </button>
+                    <button onclick="deleteTeam('${teamId}')" style="padding: 12px; background: rgba(207, 102, 121, 0.2); color: var(--danger-color); border: 2px solid var(--danger-color); border-radius: 8px; cursor: pointer; font-weight: 600;">
+                        🗑️ Eliminar Equipa
+                    </button>
+                </div>
+            ` : ''}
             
             <h3 style="margin-top: 25px; margin-bottom: 15px; color: var(--secondary-color);">📋 Desafios (${currentIndex}/${challenges.length})</h3>
             ${challengesHtml}
