@@ -32,12 +32,16 @@ const app = document.getElementById('admin-app');
 function init() {
     // Check authentication state
     auth.onAuthStateChanged((user) => {
+        console.log("Auth state changed:", user);
         if (user) {
+            console.log("User authenticated:", user.email);
+            console.log("User UID:", user.uid);
             isAuthenticated = true;
             currentUser = user;
             render();
             loadTeams();
         } else {
+            console.log("No user authenticated");
             isAuthenticated = false;
             currentUser = null;
             render();
