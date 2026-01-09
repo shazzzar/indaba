@@ -139,12 +139,32 @@ const miniOverlay = document.getElementById('mini-challenge-overlay');
 
 // Initialization
 function init() {
+    console.log("🔧 Iniciando aplicação...");
+    console.log("DOM Elements check:");
+    console.log("- app:", document.getElementById('view-container'));
+    console.log("- scoreDisplay:", document.getElementById('score-display'));
+    console.log("- teamDisplay:", document.getElementById('hud-team-name'));
+    console.log("- hud:", document.getElementById('hud'));
+    console.log("- fab:", document.getElementById('mini-challenge-fab'));
+    console.log("- miniOverlay:", document.getElementById('mini-challenge-overlay'));
+    
     loadState();
+    console.log("✅ State carregado:", state);
+    
     render();
+    console.log("✅ Render executado");
+    
     initGPS();
+    console.log("✅ GPS inicializado");
 
     // Mini Challenge Listeners
+    const btnCloseMini = document.getElementById('btn-close-mini');
+    const btnStartMini = document.getElementById('btn-start-mini');
+    
+    console.log("Botões mini challenge:", { btnCloseMini, btnStartMini });
+    
     fab.addEventListener('click', () => {
+        console.log("FAB clicado! currentMiniChallenge:", state.currentMiniChallenge);
         // Se já tem um mini desafio ativo, vai direto para a view
         if (state.currentMiniChallenge) {
             changeView('MINI_CHALLENGE_VIEW');
@@ -155,24 +175,33 @@ function init() {
         }
     });
 
-    document.getElementById('btn-close-mini').addEventListener('click', () => {
-        miniOverlay.classList.add('hidden');
-    });
-
-    document.getElementById('btn-start-mini').addEventListener('click', () => {
-        if (state.miniChallengePool.length > 0) {
+    if (btnCloseMini) {
+        btnCloseMini.addEventListener('click', () => {
             miniOverlay.classList.add('hidden');
-            startMiniChallenge();
-        }
-    });
+        });
+    }
+
+    if (btnStartMini) {
+        btnStartMini.addEventListener('click', () => {
+            console.log("Aceitar desafio clicado!");
+            if (state.miniChallengePool.length > 0) {
+                miniOverlay.classList.add('hidden');
+                startMiniChallenge();
+            }
+        });
+    }
 
     // Initialize randomization if starting new
     if (state.challengePool.length === 0) {
         state.challengePool = shuffle([...MAIN_CHALLENGES]);
+        console.log("✅ Desafios principais embaralhados:", state.challengePool.length);
     }
     if (state.miniChallengePool.length === 0) {
         state.miniChallengePool = shuffle([...MINI_CHALLENGES]);
+        console.log("✅ Mini desafios embaralhados:", state.miniChallengePool.length);
     }
+    
+    console.log("✅ Inicialização completa!");
 }
 
 // GPS Tracking
