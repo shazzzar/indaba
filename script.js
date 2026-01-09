@@ -10,6 +10,8 @@ const firebaseConfig = {
   measurementId: "G-WTQ9S1G0JV"
 };
 
+console.log("🚀 Indaba Challenge - Script carregado!");
+
 // Initialize Firebase
 let db, auth, storage;
 try {
