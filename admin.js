@@ -50,13 +50,15 @@ function init() {
 }
 
 function login(email, password) {
+    console.log("Attempting login with:", email);
     auth.signInWithEmailAndPassword(email, password)
         .then((userCredential) => {
             console.log("Login successful:", userCredential.user.email);
+            console.log("User UID:", userCredential.user.uid);
         })
         .catch((error) => {
             console.error("Login error:", error);
-            alert('Erro no login: ' + error.message);
+            alert('Erro no login: ' + error.message + '\n\nCódigo: ' + error.code);
         });
 }
 
@@ -76,7 +78,23 @@ function loadTeams() {
         return;
     }
     
+    if (!auth.currentUser) {
+        console.error("Utilizador não autenticado! Faz login primeiro.");
+        const container = document.getElementById('teams-container');
+        if (container) {
+            container.innerHTML = `
+                <div style="background: rgba(207, 102, 121, 0.2); padding: 30px; border-radius: 8px; text-align: center;">
+                    <h3 style="color: var(--danger-color); margin-bottom: 10px;">🔒 Não autenticado</h3>
+                    <p>Precisas fazer login para ver as equipas.</p>
+                    <p style="margin-top: 15px; opacity: 0.7;">Verifica se fizeste login corretamente com email e password.</p>
+                </div>
+            `;
+        }
+        return;
+    }
+    
     console.log("Loading teams...");
+    console.log("Authenticated user:", auth.currentUser.email);
     
     // Remove old listener if exists
     if (window.teamsListener) {
@@ -111,8 +129,14 @@ function loadTeams() {
             container.innerHTML = `
                 <div style="background: rgba(207, 102, 121, 0.2); padding: 20px; border-radius: 8px; text-align: center;">
                     <h3 style="color: var(--danger-color); margin-bottom: 10px;">❌ Erro ao carregar equipas</h3>
-                    <p>${error.message}</p>
-                    <p style="margin-top: 10px; opacity: 0.7;">Verifica as regras de segurança do Firebase Database</p>
+                    <p><strong>Código:</strong> ${error.code}</p>
+                    <p><strong>Mensagem:</strong> ${error.message}</p>
+                    <p style="margin-top: 15px; opacity: 0.7;">
+                        ${error.code === 'PERMISSION_DENIED' ? 
+                            'Faz logout e login novamente. Se o problema persistir, verifica as regras do Firebase Database.' : 
+                            'Verifica a tua ligação à internet e as configurações do Firebase.'}
+                    </p>
+                    <button class="btn-primary" style="margin-top: 15px;" onclick="logout()">Fazer Logout e Login Novamente</button>
                 </div>
             `;
         }
