@@ -405,13 +405,17 @@ function showTeamDetails(teamId) {
         <div style="background: var(--card-bg); border-radius: var(--border-radius); max-width: 800px; width: 100%; max-height: 90vh; overflow-y: auto; padding: 30px; position: relative;">
             <button onclick="this.closest('div').parentElement.remove()" style="position: absolute; top: 15px; right: 15px; background: var(--danger-color); color: white; border: none; border-radius: 50%; width: 35px; height: 35px; font-size: 1.2rem; cursor: pointer; font-weight: bold;">×</button>
             
-            <h2 style="margin-bottom: 10px; color: var(--primary-color);">${team.teamName || 'Sem nome'}</h2>
+            <h2 style="margin-bottom: 10px; color: var(--primary-color);">
+                <span id="team-name-display-${teamId}">${team.teamName || 'Sem nome'}</span>
+                <button onclick="editTeamName('${teamId}')" style="margin-left: 10px; background: var(--primary-color); color: black; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; font-size: 0.8rem;">✏️ Editar Nome</button>
+            </h2>
             <p style="opacity: 0.6; margin-bottom: 20px;">ID: ${teamId}</p>
             
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin-bottom: 25px;">
                 <div style="background: rgba(3, 218, 198, 0.1); padding: 15px; border-radius: 8px; text-align: center;">
-                    <div style="font-size: 2rem; font-weight: 800; color: var(--secondary-color);">${team.score || 0}</div>
+                    <div id="team-score-display-${teamId}" style="font-size: 2rem; font-weight: 800; color: var(--secondary-color);">${team.score || 0}</div>
                     <div style="opacity: 0.7; font-size: 0.9rem;">Pontos</div>
+                    <button onclick="editTeamScore('${teamId}')" style="margin-top: 8px; background: var(--secondary-color); color: black; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; font-size: 0.75rem; width: 100%;">✏️ Editar</button>
                 </div>
                 <div style="background: rgba(187, 134, 252, 0.1); padding: 15px; border-radius: 8px; text-align: center;">
                     <div style="font-size: 2rem; font-weight: 800; color: var(--primary-color);">${currentIndex}</div>
@@ -429,6 +433,15 @@ function showTeamDetails(teamId) {
                 ${team.currentMiniChallenge ? `<div><strong>Mini Desafio:</strong> ${team.currentMiniChallenge}</div>` : ''}
             </div>
             
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px;">
+                <button onclick="resetTeamProgress('${teamId}')" style="padding: 12px; background: rgba(255, 193, 7, 0.2); color: #ffc107; border: 2px solid #ffc107; border-radius: 8px; cursor: pointer; font-weight: 600;">
+                    🔄 Resetar Progresso
+                </button>
+                <button onclick="deleteTeam('${teamId}')" style="padding: 12px; background: rgba(207, 102, 121, 0.2); color: var(--danger-color); border: 2px solid var(--danger-color); border-radius: 8px; cursor: pointer; font-weight: 600;">
+                    🗑️ Eliminar Equipa
+                </button>
+            </div>
+            
             <h3 style="margin-top: 25px; margin-bottom: 15px; color: var(--secondary-color);">📋 Desafios (${currentIndex}/${challenges.length})</h3>
             ${challengesHtml}
             
@@ -438,6 +451,12 @@ function showTeamDetails(teamId) {
             ${pathPoints.length > 0 ? `
                 <button onclick="event.stopPropagation(); showMapView('${teamId}')" style="width: 100%; margin-top: 20px; padding: 15px; background: var(--success-color); color: white; border: none; border-radius: 8px; font-weight: 600; font-size: 1rem; cursor: pointer;">
                     🗺️ VER PERCURSO NO MAPA
+                </button>
+            ` : ''}
+            
+            ${pathPoints.length > 5 ? `
+                <button onclick="clearTeamGPS('${teamId}')" style="width: 100%; margin-top: 10px; padding: 12px; background: rgba(207, 102, 121, 0.2); color: var(--danger-color); border: 2px solid var(--danger-color); border-radius: 8px; cursor: pointer; font-weight: 600;">
+                    🗑️ Limpar Histórico GPS
                 </button>
             ` : ''}
         </div>
@@ -582,6 +601,138 @@ function showMapView(teamId) {
 }
 
 window.showMapView = showMapView;
+
+// Edit team name
+function editTeamName(teamId) {
+    const team = teamsData[teamId];
+    if (!team) return;
+    
+    const newName = prompt("Novo nome da equipa:", team.teamName || "");
+    if (newName !== null && newName.trim() !== "") {
+        db.ref(`teams/${teamId}/teamName`).set(newName.trim())
+            .then(() => {
+                console.log("Nome atualizado com sucesso");
+                const display = document.getElementById(`team-name-display-${teamId}`);
+                if (display) display.textContent = newName.trim();
+            })
+            .catch(error => {
+                console.error("Erro ao atualizar nome:", error);
+                alert("Erro ao atualizar nome: " + error.message);
+            });
+    }
+}
+
+// Edit team score
+function editTeamScore(teamId) {
+    const team = teamsData[teamId];
+    if (!team) return;
+    
+    const newScore = prompt("Nova pontuação:", team.score || 0);
+    if (newScore !== null) {
+        const score = parseInt(newScore);
+        if (!isNaN(score)) {
+            db.ref(`teams/${teamId}/score`).set(score)
+                .then(() => {
+                    console.log("Pontuação atualizada com sucesso");
+                    const display = document.getElementById(`team-score-display-${teamId}`);
+                    if (display) display.textContent = score;
+                })
+                .catch(error => {
+                    console.error("Erro ao atualizar pontuação:", error);
+                    alert("Erro ao atualizar pontuação: " + error.message);
+                });
+        } else {
+            alert("Por favor insere um número válido!");
+        }
+    }
+}
+
+// Reset team progress
+function resetTeamProgress(teamId) {
+    const team = teamsData[teamId];
+    if (!team) return;
+    
+    if (confirm(`⚠️ Tens a certeza que queres resetar o progresso de "${team.teamName}"?\n\nIsto vai:\n- Voltar ao desafio 1\n- Manter os pontos atuais\n- Manter o histórico GPS`)) {
+        db.ref(`teams/${teamId}`).update({
+            currentChallengeIndex: 0,
+            view: 'MAIN_LOOP',
+            currentMiniChallenge: null
+        })
+            .then(() => {
+                alert("✅ Progresso resetado com sucesso!");
+                // Close modal
+                document.querySelectorAll('div[style*="position: fixed"]').forEach(el => {
+                    if (el.querySelector(`#team-name-display-${teamId}`)) {
+                        el.remove();
+                    }
+                });
+            })
+            .catch(error => {
+                console.error("Erro ao resetar progresso:", error);
+                alert("❌ Erro ao resetar progresso: " + error.message);
+            });
+    }
+}
+
+// Clear team GPS history
+function clearTeamGPS(teamId) {
+    const team = teamsData[teamId];
+    if (!team) return;
+    
+    if (confirm(`⚠️ Tens a certeza que queres limpar o histórico GPS de "${team.teamName}"?\n\nEsta ação não pode ser desfeita!`)) {
+        db.ref(`teams/${teamId}/pathHistory`).set([])
+            .then(() => {
+                alert("✅ Histórico GPS limpo com sucesso!");
+                // Refresh details
+                document.querySelectorAll('div[style*="position: fixed"]').forEach(el => {
+                    if (el.querySelector(`#team-name-display-${teamId}`)) {
+                        el.remove();
+                    }
+                });
+                showTeamDetails(teamId);
+            })
+            .catch(error => {
+                console.error("Erro ao limpar GPS:", error);
+                alert("❌ Erro ao limpar GPS: " + error.message);
+            });
+    }
+}
+
+// Delete team
+function deleteTeam(teamId) {
+    const team = teamsData[teamId];
+    if (!team) return;
+    
+    const confirmText = prompt(
+        `⚠️ ATENÇÃO: Esta ação é PERMANENTE e não pode ser desfeita!\n\n` +
+        `Vais eliminar a equipa "${team.teamName}" com:\n` +
+        `- ${team.score || 0} pontos\n` +
+        `- ${team.currentChallengeIndex || 0} desafios completados\n` +
+        `- ${team.pathHistory?.length || 0} pontos GPS\n\n` +
+        `Para confirmar, escreve: DELETE`
+    );
+    
+    if (confirmText === "DELETE") {
+        db.ref(`teams/${teamId}`).remove()
+            .then(() => {
+                alert("✅ Equipa eliminada com sucesso!");
+                // Close all modals
+                document.querySelectorAll('div[style*="position: fixed"]').forEach(el => el.remove());
+            })
+            .catch(error => {
+                console.error("Erro ao eliminar equipa:", error);
+                alert("❌ Erro ao eliminar equipa: " + error.message);
+            });
+    } else if (confirmText !== null) {
+        alert("❌ Cancelado. Tens de escrever exatamente 'DELETE' para confirmar.");
+    }
+}
+
+window.editTeamName = editTeamName;
+window.editTeamScore = editTeamScore;
+window.resetTeamProgress = resetTeamProgress;
+window.clearTeamGPS = clearTeamGPS;
+window.deleteTeam = deleteTeam;
 
 window.showTeamDetails = showTeamDetails;
 
