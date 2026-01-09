@@ -72,9 +72,25 @@ function loadTeams() {
         return;
     }
     
-    db.ref('teams').on('value', (snapshot) => {
-        teamsData = snapshot.val() || {};
+    // Remove old listener if exists
+    if (window.teamsListener) {
+        db.ref('teams').off('value', window.teamsListener);
+    }
+    
+    // Real-time listener
+    window.teamsListener = db.ref('teams').on('value', (snapshot) => {
+        const newData = snapshot.val() || {};
+        
+        // Check if data changed
+        const hasChanges = JSON.stringify(newData) !== JSON.stringify(teamsData);
+        
+        teamsData = newData;
         renderTeams();
+        
+        // Show update indicator
+        if (hasChanges && Object.keys(teamsData).length > 0) {
+            showUpdateNotification();
+        }
     });
 }
 
@@ -96,12 +112,22 @@ function render() {
             <div class="admin-header">
                 <div>
                     <h1>📊 Painel de Administração - Indaba Challenge</h1>
-                    <p style="opacity: 0.6; font-size: 0.9rem; margin-top: 5px;">👤 ${currentUser?.email || 'Admin'}</p>
+                    <p style="opacity: 0.6; font-size: 0.9rem; margin-top: 5px;">
+                        👤 ${currentUser?.email || 'Admin'} 
+                        <span id="live-indicator" style="display: inline-block; margin-left: 15px; padding: 5px 12px; background: rgba(76, 175, 80, 0.2); border-radius: 20px; font-size: 0.85rem;">
+                            <span style="display: inline-block; width: 8px; height: 8px; background: #4caf50; border-radius: 50%; margin-right: 5px; animation: pulse 2s infinite;"></span>
+                            AO VIVO
+                        </span>
+                    </p>
                 </div>
                 <div>
                     <button class="refresh-btn" onclick="loadTeams()">🔄 Atualizar</button>
                     <button class="logout-btn" onclick="logout()">Sair</button>
                 </div>
+            </div>
+            
+            <div id="update-notification" style="display: none; position: fixed; top: 20px; right: 20px; background: var(--success-color); color: white; padding: 15px 25px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); z-index: 10000; animation: slideIn 0.3s ease;">
+                ✨ Dados atualizados!
             </div>
             
             <div class="stats-overview" id="stats-container">
@@ -111,9 +137,43 @@ function render() {
             <div class="teams-grid" id="teams-container">
                 <!-- Teams will be injected -->
             </div>
+            
+            <style>
+                @keyframes pulse {
+                    0%, 100% { opacity: 1; }
+                    50% { opacity: 0.5; }
+                }
+                @keyframes slideIn {
+                    from { transform: translateX(400px); opacity: 0; }
+                    to { transform: translateX(0); opacity: 1; }
+                }
+                @keyframes slideOut {
+                    from { transform: translateX(0); opacity: 1; }
+                    to { transform: translateX(400px); opacity: 0; }
+                }
+                @keyframes highlight {
+                    0% { background: var(--card-bg); }
+                    50% { background: rgba(3, 218, 198, 0.2); }
+                    100% { background: var(--card-bg); }
+                }
+            </style>
         `;
         
         loadTeams();
+    }
+}
+
+function showUpdateNotification() {
+    const notification = document.getElementById('update-notification');
+    if (notification) {
+        notification.style.display = 'block';
+        setTimeout(() => {
+            notification.style.animation = 'slideOut 0.3s ease';
+            setTimeout(() => {
+                notification.style.display = 'none';
+                notification.style.animation = 'slideIn 0.3s ease';
+            }, 300);
+        }, 2000);
     }
 }
 
@@ -166,11 +226,17 @@ function renderTeams() {
         const lastUpdate = team.lastUpdate ? new Date(team.lastUpdate).toLocaleString('pt-PT') : 'Nunca';
         const pathPoints = team.pathHistory?.length || 0;
         
+        // Check if recently updated (last 10 seconds)
+        const isRecentlyUpdated = team.lastUpdate && (Date.now() - new Date(team.lastUpdate).getTime()) < 10000;
+        
         return `
-            <div class="team-card" onclick="showTeamDetails('${teamId}')" style="cursor: pointer;">
+            <div class="team-card ${isRecentlyUpdated ? 'recently-updated' : ''}" onclick="showTeamDetails('${teamId}')" style="cursor: pointer; ${isRecentlyUpdated ? 'animation: highlight 2s ease;' : ''}">
                 <div class="team-header">
                     <div>
-                        <div style="font-size: 0.8rem; opacity: 0.6;">#${index + 1}</div>
+                        <div style="font-size: 0.8rem; opacity: 0.6;">
+                            #${index + 1}
+                            ${isRecentlyUpdated ? '<span style="color: var(--success-color); margin-left: 5px;">🔴 ATIVO</span>' : ''}
+                        </div>
                         <div class="team-name">${team.teamName || 'Sem nome'}</div>
                     </div>
                     <div class="team-score">${team.score || 0} pts</div>
@@ -330,12 +396,12 @@ window.handleLogin = () => {
         login(email, password);
     } else {
         alert('Por favor preenche email e password!');
+   Cleanup on page unload
+window.addEventListener('beforeunload', () => {
+    if (window.teamsListener && db) {
+        db.ref('teams').off('value', window.teamsListener);
     }
-};
-
-// Start
-init();
-
+}
 // Auto-refresh every 30 seconds
 setInterval(() => {
     if (isAuthenticated) {
