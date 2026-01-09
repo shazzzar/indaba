@@ -396,15 +396,15 @@ window.handleLogin = () => {
         login(email, password);
     } else {
         alert('Por favor preenche email e password!');
-   Cleanup on page unload
+    }
+};
+
+// Start
+init();
+
+// Cleanup on page unload
 window.addEventListener('beforeunload', () => {
     if (window.teamsListener && db) {
         db.ref('teams').off('value', window.teamsListener);
     }
-}
-// Auto-refresh every 30 seconds
-setInterval(() => {
-    if (isAuthenticated) {
-        loadTeams();
-    }
-}, 30000);
+});
