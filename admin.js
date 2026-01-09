@@ -408,7 +408,7 @@ function showTeamDetails(teamId) {
     modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
     
     modal.innerHTML = `
-        <div style="background: var(--card-bg); border-radius: var(--border-radius); max-width: 800px; width: 100%; max-height: 90vh; overflow-y: auto; padding: 30px; position: relative;">
+        <div style="background: var(--card-bg); border-radius: var(--border-radius); max-width: 800px; width: 100%; min-height: 600px; max-height: 90vh; overflow-y: auto; padding: 30px; position: relative;">
             <button onclick="this.closest('div').parentElement.remove()" style="position: absolute; top: 15px; right: 15px; background: var(--danger-color); color: white; border: none; border-radius: 50%; width: 35px; height: 35px; font-size: 1.2rem; cursor: pointer; font-weight: bold;">×</button>
             
             <h2 style="margin-bottom: 10px; color: var(--primary-color);">
