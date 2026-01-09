@@ -164,10 +164,6 @@ function init() {
         }
     });
 
-    document.getElementById('mini-proof-check').addEventListener('change', (e) => {
-        document.getElementById('btn-complete-mini').disabled = !e.target.checked;
-    });
-
     // Initialize randomization if starting new
     if (state.challengePool.length === 0) {
         state.challengePool = shuffle([...MAIN_CHALLENGES]);

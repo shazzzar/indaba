@@ -28,6 +28,7 @@
             <div style="display:flex; align-items:center; gap:10px;">
                 <span id="gps-status" style="font-size:1.2rem;" title="GPS status">📍</span>
                 <div class="team-name" id="hud-team-name">Equipa</div>
+                <button onclick="if(confirm('Tens a certeza que queres terminar sessão?')) { localStorage.clear(); location.reload(); }" style="background: var(--danger-color); color: white; border: none; padding: 8px 12px; border-radius: 6px; font-size: 0.8rem; font-weight: 600; cursor: pointer;">🚪 Sair</button>
             </div>
         </header>
 
@@ -44,24 +45,13 @@
         <!-- Mini Challenge Modal/Overlay -->
         <div id="mini-challenge-overlay" class="overlay hidden">
             <div class="overlay-content">
-                <h2>Mini Desafios</h2>
+                <h2>📝 Mini Desafios</h2>
                 <div id="mini-challenge-intro">
-                    <p>Cada desafio completo dá <strong>50 pontos</strong>.</p>
-                    <p>Cada desafio será aceite após prova fotográfica/vídeo.</p>
-                    <p>Se saltarem um desafio, perdem <strong>20 pontos</strong>.</p>
-                    <button id="btn-start-mini" class="btn-primary">QUERO 1 DESAFIO</button>
+                    <p style="margin: 15px 0;">Cada desafio completo dá <strong style="color: var(--success-color);">+50 pontos</strong>.</p>
+                    <p style="margin: 15px 0;">Terás de enviar uma <strong>foto ou vídeo</strong> como prova.</p>
+                    <p style="margin: 15px 0; opacity: 0.8; font-size: 0.9rem;">💡 Podes voltar ao desafio principal a qualquer momento - o teu progresso fica guardado!</p>
+                    <button id="btn-start-mini" class="btn-primary">ACEITAR DESAFIO</button>
                     <button id="btn-close-mini" class="btn-secondary">Fechar</button>
-                </div>
-                <div id="mini-challenge-active" class="hidden">
-                    <div id="mini-challenge-text" class="challenge-text"></div>
-                    <div class="mini-controls">
-                        <label class="checkbox-container">
-                            <input type="checkbox" id="mini-proof-check">
-                            <span>Já enviámos a foto/vídeo!</span>
-                        </label>
-                        <button id="btn-complete-mini" class="btn-success" disabled>Concluir (+50)</button>
-                        <button id="btn-skip-mini" class="btn-danger">Saltar (-20)</button>
-                    </div>
                 </div>
             </div>
         </div>
