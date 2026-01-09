@@ -809,6 +809,20 @@ function showMiniChallenges() {
                 <div style="font-weight: 600; margin-bottom: 5px; color: var(--secondary-color);">📝 Mini Desafio:</div>
                 <div style="white-space: pre-wrap; line-height: 1.5;">${team.currentMiniChallenge}</div>
             </div>
+            ${team.currentMiniChallengeMedia ? `
+                <div style="margin-top: 15px; padding: 12px; background: rgba(76, 175, 80, 0.1); border-radius: 6px;">
+                    <div style="font-weight: 600; margin-bottom: 10px; color: var(--success-color);">✅ Comprovativo Enviado:</div>
+                    ${team.currentMiniChallengeMedia.includes('.mp4') || team.currentMiniChallengeMedia.includes('.mov') || team.currentMiniChallengeMedia.includes('.webm') ?
+                        `<video src="${team.currentMiniChallengeMedia}" controls style="max-width: 100%; border-radius: 6px; max-height: 300px;"></video>` :
+                        `<img src="${team.currentMiniChallengeMedia}" alt="Comprovativo" style="max-width: 100%; border-radius: 6px; max-height: 300px; object-fit: cover; cursor: zoom-in;" onclick="event.stopPropagation(); window.open('${team.currentMiniChallengeMedia}', '_blank')">`
+                    }
+                </div>
+            ` : `
+                <div style="margin-top: 10px; padding: 10px; background: rgba(255, 193, 7, 0.1); border-radius: 6px; text-align: center; opacity: 0.7;">
+                    ⏳ Aguardando comprovativo...
+                </div>
+            `}
+            </div>
             <div style="text-align: right; margin-top: 10px; opacity: 0.6; font-size: 0.8rem;">
                 🕐 ${team.lastUpdate ? new Date(team.lastUpdate).toLocaleString('pt-PT') : 'N/A'}
             </div>

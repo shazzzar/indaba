@@ -11,11 +11,12 @@ const firebaseConfig = {
 };
 
 // Initialize Firebase
-let db, auth;
+let db, auth, storage;
 try {
     firebase.initializeApp(firebaseConfig);
     db = firebase.database();
     auth = firebase.auth();
+    storage = firebase.storage();
     
     // Enable anonymous authentication for teams
     auth.signInAnonymously().catch((error) => {
@@ -112,7 +113,7 @@ const MINI_CHALLENGES = [
 
 // App State
 let state = {
-    view: 'SETUP', // SETUP, INTRO, TRAVEL, TRAVEL_RESULT, MAIN_LOOP, FINISH
+    view: 'SETUP', // SETUP, INTRO, TRAVEL, TRAVEL_RESULT, MAIN_LOOP, MINI_CHALLENGE_VIEW, FINISH
     score: 200,
     teamName: '',
     teamId: null, // Firebase key
@@ -120,6 +121,7 @@ let state = {
     currentChallengeIndex: 0,
     miniChallengePool: [],
     currentMiniChallenge: null,
+    currentMiniChallengeMedia: null, // URL da imagem/vídeo enviado
     hasSeenAutographTask: false,
     pathHistory: [], // [{lat, lng, timestamp}]
     lastUpdate: null
@@ -262,7 +264,8 @@ function saveState() {
             pathHistory: state.pathHistory,
             lastUpdate: state.lastUpdate,
             challengePool: state.challengePool.map(c => ({ id: c.id, text: c.text, type: c.type })),
-            currentMiniChallenge: state.currentMiniChallenge
+            currentMiniChallenge: state.currentMiniChallenge,
+            currentMiniChallengeMedia: state.currentMiniChallengeMedia
         };
         
         db.ref('teams/' + state.teamId).set(teamData).catch(err => {
@@ -384,6 +387,47 @@ function render() {
             </div>
         `;
     }
+    
+    if (state.view === 'MINI_CHALLENGE_VIEW') {
+        if (!state.currentMiniChallenge) {
+            changeView('MAIN_LOOP');
+            return;
+        }
+        
+        app.innerHTML = `
+            <div class="view-card">
+                <h2>📝 MINI DESAFIO</h2>
+                <div class="challenge-text" style="margin: 20px 0; padding: 15px; background: rgba(3, 218, 198, 0.1); border-radius: 8px;">
+                    ${state.currentMiniChallenge}
+                </div>
+                
+                ${state.currentMiniChallengeMedia ? `
+                    <div style="margin: 20px 0; text-align: center;">
+                        <p style="color: var(--success-color); margin-bottom: 10px;">✅ Ficheiro enviado!</p>
+                        ${state.currentMiniChallengeMedia.includes('.mp4') || state.currentMiniChallengeMedia.includes('.mov') || state.currentMiniChallengeMedia.includes('.webm') ?
+                            `<video src="${state.currentMiniChallengeMedia}" controls style="max-width: 100%; border-radius: 8px;"></video>` :
+                            `<img src="${state.currentMiniChallengeMedia}" alt="Mini Desafio" style="max-width: 100%; border-radius: 8px;">`
+                        }
+                    </div>
+                    <button class="btn-success" onclick="completeMiniChallenge()">CONCLUIR E VOLTAR</button>
+                ` : `
+                    <div style="margin: 20px 0;">
+                        <p style="margin-bottom: 15px; opacity: 0.8;">Envia uma foto ou vídeo a comprovar que completaste o desafio:</p>
+                        <input type="file" id="mini-media-input" accept="image/*,video/*" style="display: none;" onchange="handleMiniMediaUpload(event)">
+                        <button class="btn-primary" onclick="document.getElementById('mini-media-input').click()">
+                            📷 ESCOLHER FOTO/VÍDEO
+                        </button>
+                        <div id="upload-progress" style="display: none; margin-top: 15px;">
+                            <div style="background: rgba(255,255,255,0.1); height: 30px; border-radius: 15px; overflow: hidden;">
+                                <div id="upload-bar" style="background: var(--secondary-color); height: 100%; width: 0%; transition: width 0.3s; display: flex; align-items: center; justify-content: center; color: black; font-weight: 600; font-size: 0.9rem;"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <button class="btn-danger" style="margin-top: 10px;" onclick="changeView('MAIN_LOOP')">CANCELAR</button>
+                `}
+            </div>
+        `;
+    }
 
     if (state.view === 'FINISH') {
         fab.classList.add('hidden');
@@ -478,10 +522,70 @@ function startMiniChallenge() {
     if (state.miniChallengePool.length > 0) {
         const nextMini = state.miniChallengePool.pop();
         state.currentMiniChallenge = nextMini;
+        state.currentMiniChallengeMedia = null; // Reset media
         saveState();
-        renderMiniOverlay();
+        changeView('MINI_CHALLENGE_VIEW');
     }
 }
 
-// Kickoff
-init();
+window.handleMiniMediaUpload = async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    // Check file size (max 10MB)
+    if (file.size > 10 * 1024 * 1024) {
+        alert("Ficheiro muito grande! Máximo 10MB.");
+        return;
+    }
+    
+    const progressDiv = document.getElementById('upload-progress');
+    const progressBar = document.getElementById('upload-bar');
+    
+    if (progressDiv && progressBar) {
+        progressDiv.style.display = 'block';
+        progressBar.style.width = '0%';
+        progressBar.textContent = '0%';
+    }
+    
+    try {
+        // Upload to Firebase Storage
+        const storageRef = storage.ref();
+        const fileRef = storageRef.child(`mini-challenges/${state.teamId}/${Date.now()}_${file.name}`);
+        
+        const uploadTask = fileRef.put(file);
+        
+        uploadTask.on('state_changed', 
+            (snapshot) => {
+                const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+                if (progressBar) {
+                    progressBar.style.width = progress + '%';
+                    progressBar.textContent = Math.round(progress) + '%';
+                }
+            },
+            (error) => {
+                console.error('Upload error:', error);
+                alert('❌ Erro ao enviar ficheiro: ' + error.message);
+                if (progressDiv) progressDiv.style.display = 'none';
+            },
+            async () => {
+                // Upload complete
+                const downloadURL = await uploadTask.snapshot.ref.getDownloadURL();
+                state.currentMiniChallengeMedia = downloadURL;
+                saveState();
+                render();
+            }
+        );
+    } catch (error) {
+        console.error('Upload error:', error);
+        alert('❌ Erro ao enviar ficheiro: ' + error.message);
+        if (progressDiv) progressDiv.style.display = 'none';
+    }
+};
+
+window.completeMiniChallenge = () => {
+    state.currentMiniChallenge = null;
+    state.currentMiniChallengeMedia = null;
+    saveState();
+    changeView('MAIN_LOOP');
+};
+
