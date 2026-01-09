@@ -756,7 +756,9 @@ function deleteTeam(teamId) {
 
 window.editTeamName = editTeamName;
 window.editTeamScore = editTeamScore;
-window.resetTeamProgress = rese
+window.resetTeamProgress = resetTeamProgress;
+window.clearTeamGPS = clearTeamGPS;
+window.deleteTeam = deleteTeam;
 
 // Toggle edit mode
 function toggleEditMode() {
@@ -765,9 +767,7 @@ function toggleEditMode() {
     render();
 }
 
-window.toggleEditMode = toggleEditMode;tTeamProgress;
-window.clearTeamGPS = clearTeamGPS;
-window.deleteTeam = deleteTeam;
+window.toggleEditMode = toggleEditMode;
 
 window.showTeamDetails = showTeamDetails;
 
