@@ -378,24 +378,6 @@ function showTeamDetails(teamId) {
     const challenges = team.challengePool || [];
     const currentIndex = team.currentChallengeIndex || 0;
     
-    // Build GPS history HTML
-    let gpsHtml = '<p style="opacity: 0.5;">Sem histórico GPS</p>';
-    if (pathPoints.length > 0) {
-        gpsHtml = `
-            <div style="max-height: 200px; overflow-y: auto;">
-                ${pathPoints.slice(-10).reverse().map((point, i) => `
-                    <div style="background: rgba(255,255,255,0.05); padding: 8px; margin-bottom: 5px; border-radius: 4px; font-size: 0.85rem;">
-                        <strong>${pathPoints.length - i}.</strong> 
-                        Lat: ${point.lat?.toFixed(6) || 'N/A'}, 
-                        Lng: ${point.lng?.toFixed(6) || 'N/A'}<br>
-                        <span style="opacity: 0.6;">${point.timestamp ? new Date(point.timestamp).toLocaleString('pt-PT') : 'N/A'}</span>
-                    </div>
-                `).join('')}
-                ${pathPoints.length > 10 ? `<p style="text-align: center; opacity: 0.5; font-size: 0.8rem;">... e mais ${pathPoints.length - 10} pontos</p>` : ''}
-            </div>
-        `;
-    }
-    
     // Build challenges HTML
     let challengesHtml = '<p style="opacity: 0.5;">Sem desafios</p>';
     if (challenges.length > 0) {
@@ -471,12 +453,9 @@ function showTeamDetails(teamId) {
             <h3 style="margin-top: 25px; margin-bottom: 15px; color: var(--secondary-color);">📋 Desafios (${currentIndex}/${challenges.length})</h3>
             ${challengesHtml}
             
-            <h3 style="margin-top: 25px; margin-bottom: 15px; color: var(--secondary-color);">📍 Histórico GPS (últimos 10)</h3>
-            ${gpsHtml}
-            
             ${pathPoints.length > 0 ? `
                 <button onclick="event.stopPropagation(); showMapView('${teamId}')" style="width: 100%; margin-top: 20px; padding: 15px; background: var(--success-color); color: white; border: none; border-radius: 8px; font-weight: 600; font-size: 1rem; cursor: pointer;">
-                    🗺️ VER PERCURSO NO MAPA
+                    🗺️ VER PERCURSO COMPLETO NO MAPA
                 </button>
             ` : ''}
             
