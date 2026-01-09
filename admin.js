@@ -31,6 +31,19 @@ const app = document.getElementById('admin-app');
 
 // Initialize
 function init() {
+    console.log("🚀 Initializing admin panel...");
+    
+    // Show loading screen
+    app.innerHTML = `
+        <div style="display: flex; align-items: center; justify-content: center; min-height: 100vh;">
+            <div style="text-align: center;">
+                <div style="font-size: 3rem; margin-bottom: 20px; animation: pulse 2s infinite;">⏳</div>
+                <h2 style="color: var(--primary-color);">A carregar...</h2>
+                <p style="opacity: 0.6; margin-top: 10px;">A inicializar Firebase</p>
+            </div>
+        </div>
+    `;
+    
     // Check authentication state
     auth.onAuthStateChanged((user) => {
         console.log("Auth state changed:", user);
